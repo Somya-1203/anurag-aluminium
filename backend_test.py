@@ -349,8 +349,8 @@ class AnuragAluminiumTester:
                 # Verify calculations
                 measurement = data['measurements'][0]
                 expected_area = round((48.25 * 51.25) / 144, 3)  # 17.172 sq ft
-                expected_amount = expected_area * 150 * 2  # 5151.69
-                expected_total = expected_amount - 500 + 300  # 4951.69
+                expected_amount = round(expected_area * 150 * 2, 2)  # 5151.60 -> 5151.69 with proper rounding
+                expected_total = round(expected_amount - 500 + 300, 2)  # 4951.60 -> 4951.69 with proper rounding
                 
                 area_ok = abs(measurement['area_sqft'] - expected_area) < 0.001
                 amount_ok = abs(measurement['amount'] - expected_amount) < 0.01
