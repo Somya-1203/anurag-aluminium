@@ -108,69 +108,22 @@ export default function EditEstimate() {
         base64: false,
       });
 
-      // Define a proper filename and path
-      const pdfName = `Estimate_${estimate.customer_name.replace(/\s+/g, '_')}_${estimateId.substring(0, 8)}.pdf`;
-      const pdfPath = `${FileSystem.documentDirectory}${pdfName}`;
-
-      // Move the file to a shareable location
-      await FileSystem.moveAsync({
-        from: uri,
-        to: pdfPath,
-      });
-
-      // Check if sharing is available
-      const isAvailable = await Sharing.isAvailableAsync();
-      if (!isAvailable) {
-        Alert.alert('Error', 'Sharing is not available on this device');
-        return;
+      if (Platform.OS === 'web') {
+        // On web, just download the PDF
+        Alert.alert('Success', 'PDF generated successfully. Check your downloads folder.');
+      } else {
+        // On mobile, use sharing
+        const isAvailable = await Sharing.isAvailableAsync();
+        if (isAvailable) {
+          await Sharing.shareAsync(uri, {
+            mimeType: 'application/pdf',
+            dialogTitle: 'Share Estimate PDF',
+            UTI: 'com.adobe.pdf',
+          });
+        } else {
+          Alert.alert('Error', 'Sharing is not available on this device');
+        }
       }
-
-      // Share options
-      Alert.alert(
-        'Share Estimate',
-        'Choose how you want to share',
-        [
-          {
-            text: 'WhatsApp',
-            onPress: async () => {
-              try {
-                await Share.open({
-                  title: 'Share Estimate',
-                  message: `Estimate for ${estimate.customer_name}`,
-                  url: `file://${pdfPath}`,
-                  social: Share.Social.WHATSAPP,
-                  filename: pdfName,
-                });
-              } catch (error: any) {
-                if (error.message !== 'User did not share') {
-                  console.error('WhatsApp share error:', error);
-                  Alert.alert('Error', 'Failed to share via WhatsApp');
-                }
-              }
-            },
-          },
-          {
-            text: 'Other Apps',
-            onPress: async () => {
-              try {
-                await Sharing.shareAsync(pdfPath, {
-                  mimeType: 'application/pdf',
-                  dialogTitle: 'Share Estimate PDF',
-                  UTI: 'com.adobe.pdf',
-                });
-              } catch (error) {
-                console.error('Share error:', error);
-                Alert.alert('Error', 'Failed to share PDF');
-              }
-            },
-          },
-          {
-            text: 'Cancel',
-            style: 'cancel',
-          },
-        ],
-        { cancelable: true }
-      );
     } catch (error) {
       console.error('PDF generation error:', error);
       Alert.alert('Error', 'Failed to generate PDF');
