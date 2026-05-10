@@ -19,6 +19,9 @@
     "production": {
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_BACKEND_URL": "https://anurag-aluminumlatest-production.up.railway.app"
       }
     }
   },
