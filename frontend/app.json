@@ -3,6 +3,7 @@
     "name": "Anurag Aluminium",
     "slug": "anurag-aluminium",
     "version": "1.0.0",
+    "main": "expo-router/entry",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "anurag-aluminium",

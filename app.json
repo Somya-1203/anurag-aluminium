@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "0fb9a449-5c4e-48cb-b73a-060397795c71"
+      }
+    },
+    "android": {
+      "package": "com.dev.anuragaluminium"
+    }
+  }
+}

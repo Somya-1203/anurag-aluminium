@@ -1,0 +1,8 @@
+{
+  "devDependencies": {
+    "eas-cli": "^18.11.0"
+  },
+  "dependencies": {
+    "expo": "^55.0.23"
+  }
+}
