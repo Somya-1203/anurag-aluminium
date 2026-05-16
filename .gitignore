@@ -131,3 +131,23 @@ credentials.json
 *.pem
 *.key
 .credentials
+
+# JAR / WAR / EAR
+*.jar
+*.war
+*.ear
+*.class
+
+# Spring Boot logs
+*.log
+
+# JVM crash logs
+hs_err_pid*
+replay_pid*
+
+# IntelliJ
+.idea/
+*.iws
+*.iml
+*.ipr
+

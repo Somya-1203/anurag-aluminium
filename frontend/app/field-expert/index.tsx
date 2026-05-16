@@ -105,7 +105,16 @@ export default function FieldExpertHome() {
             </View>
           ) : (
             estimates.map((estimate: any) => (
-              <View key={estimate.id} style={styles.estimateCard}>
+              <TouchableOpacity
+                key={estimate.id}
+                style={styles.estimateCard}
+                onPress={() =>
+                  router.push({
+                    pathname: '/field-expert/edit-estimate',
+                    params: { id: estimate.id },
+                  })
+                }
+              >
                 <View style={styles.estimateHeader}>
                   <Text style={styles.estimateName}>
                     {estimate.customer_name}
@@ -137,7 +146,7 @@ export default function FieldExpertHome() {
                     {estimate.measurements.length} window(s)
                   </Text>
                 </View>
-              </View>
+              </TouchableOpacity>
             ))
           )}
         </View>

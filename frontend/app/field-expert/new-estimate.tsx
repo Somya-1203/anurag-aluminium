@@ -158,7 +158,7 @@ export default function NewEstimate() {
 
       await api.createEstimate(data);
       Alert.alert('Success', 'Measurement saved successfully', [
-        { text: 'OK', onPress: () => router.back() },
+        { text: 'OK', onPress: () => router.replace('/field-expert') },
       ]);
     } catch (error) {
       Alert.alert('Error', 'Failed to save measurement');

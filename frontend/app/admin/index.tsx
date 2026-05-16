@@ -38,6 +38,13 @@ export default function AdminHome() {
       color: '#2563eb',
     },
     {
+      icon: 'people',
+      title: 'Field Experts',
+      description: 'Manage field expert users',
+      route: '/admin/field-experts',
+      color: '#f59e0b',
+    },
+    {
       icon: 'albums',
       title: 'Window Types',
       description: 'Manage window types (SOPs)',

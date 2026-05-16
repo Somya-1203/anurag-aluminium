@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -17,20 +17,43 @@ export default function AdminEstimates() {
   const [estimates, setEstimates] = useState([]);
   const [filteredEstimates, setFilteredEstimates] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [recentCount, setRecentCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
+  const [viewMode, setViewMode] = useState<'all' | 'daily' | 'monthly'>('all');
 
   useEffect(() => {
     loadEstimates();
+    loadRecentEstimates();
   }, []);
 
   useEffect(() => {
-    if (searchQuery.trim()) {
-      const filtered = estimates.filter(
-        (e: any) =>
-          e.customer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          e.mobile_number.includes(searchQuery) ||
-          e.site_address.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+    const query = searchQuery.trim().toLowerCase();
+    if (query) {
+      const filtered = estimates.filter((e: any) => {
+        const customerName = e.customer_name?.toLowerCase() || '';
+        const address = e.site_address?.toLowerCase() || '';
+        const phone = e.mobile_number || '';
+        const orderId = e.id?.toLowerCase() || '';
+        const fieldExpert = e.field_expert_name?.toLowerCase() || '';
+        const createdDate = e.created_at
+          ? new Date(e.created_at).toLocaleDateString().toLowerCase()
+          : '';
+        const createdMonth = e.created_at
+          ? new Date(e.created_at)
+              .toLocaleDateString(undefined, { year: 'numeric', month: 'long' })
+              .toLowerCase()
+          : '';
+
+        return (
+          customerName.includes(query) ||
+          address.includes(query) ||
+          phone.includes(query) ||
+          orderId.includes(query) ||
+          fieldExpert.includes(query) ||
+          createdDate.includes(query) ||
+          createdMonth.includes(query)
+        );
+      });
       setFilteredEstimates(filtered);
     } else {
       setFilteredEstimates(estimates);
@@ -47,6 +70,15 @@ export default function AdminEstimates() {
       console.error('Error loading estimates:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadRecentEstimates = async () => {
+    try {
+      const recent = await api.getRecentEstimates(24);
+      setRecentCount(recent.length);
+    } catch (error) {
+      console.error('Error loading recent estimates:', error);
     }
   };
 
