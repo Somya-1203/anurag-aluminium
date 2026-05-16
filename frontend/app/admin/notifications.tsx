@@ -7,8 +7,10 @@ import {
   StyleSheet,
   Alert,
   ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useIsFocused } from '@react-navigation/native';
 import { useAuthStore } from '../../store/authStore';
 import { api } from '../../utils/api';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,16 +18,22 @@ import { Ionicons } from '@expo/vector-icons';
 export default function AdminNotifications() {
   const router = useRouter();
   const { user } = useAuthStore();
+  const isFocused = useIsFocused();
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
-    loadNotifications();
-  }, [user]);
+    if (isFocused) {
+      loadNotifications();
+    }
+  }, [user, isFocused]);
 
   const loadNotifications = async () => {
     if (!user) return;
-    setLoading(true);
+    if (!refreshing) {
+      setLoading(true);
+    }
     try {
       const data = await api.getNotifications(user.id);
       setNotifications(data);
@@ -34,6 +42,7 @@ export default function AdminNotifications() {
       Alert.alert('Error', 'Failed to load notifications');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -62,7 +71,18 @@ export default function AdminNotifications() {
           <ActivityIndicator size="large" color="#2563eb" />
         </View>
       ) : (
-        <ScrollView style={styles.content}>
+        <ScrollView
+          style={styles.content}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => {
+                setRefreshing(true);
+                loadNotifications();
+              }}
+            />
+          }
+        >
           {notifications.length === 0 ? (
             <View style={styles.emptyState}>
               <Ionicons name="notifications-off-outline" size={64} color="#d1d5db" />

@@ -25,6 +25,29 @@ export default function AdminEstimates() {
   const [dateStart, setDateStart] = useState('');
   const [dateEnd, setDateEnd] = useState('');
 
+  const parseFilterDate = (value: string) => {
+    const parts = value.split('-').map((part) => Number(part));
+    if (parts.length !== 3 || parts.some((part) => Number.isNaN(part))) {
+      return null;
+    }
+    const [year, month, day] = parts;
+    return new Date(year, month - 1, day);
+  };
+
+  const endOfDay = (date: Date) => {
+    const end = new Date(date);
+    end.setHours(23, 59, 59, 999);
+    return end;
+  };
+
+  const applyDatePreset = (days: number) => {
+    const today = new Date();
+    const start = new Date(today);
+    start.setDate(today.getDate() - (days - 1));
+    setDateStart(start.toISOString().slice(0, 10));
+    setDateEnd(today.toISOString().slice(0, 10));
+  };
+
   useEffect(() => {
     loadEstimates();
   }, []);
@@ -40,12 +63,12 @@ export default function AdminEstimates() {
         estimate.order_id?.toLowerCase().includes(query);
 
       const matchesStatus = statusFilter === 'all' || estimate.payment_status === statusFilter;
-      const matchesExpert = !expertFilter || estimate.field_expert_name === expertFilter;
+      const matchesExpert = !expertFilter || estimate.field_expert_name?.toLowerCase().includes(expertFilter.trim().toLowerCase());
 
       const createdAt = new Date(estimate.created_at);
-      const startDate = dateStart ? new Date(dateStart) : null;
-      const endDate = dateEnd ? new Date(dateEnd) : null;
-      const matchesDate = (!startDate || createdAt >= startDate) && (!endDate || createdAt <= endDate);
+      const startDate = parseFilterDate(dateStart);
+      const endDate = parseFilterDate(dateEnd);
+      const matchesDate = (!startDate || createdAt >= startDate) && (!endDate || createdAt <= endOfDay(endDate));
 
       return matchesQuery && matchesStatus && matchesExpert && matchesDate;
     });
@@ -252,7 +275,33 @@ export default function AdminEstimates() {
         </View>
       </View>
 
-      <View style={styles.filterRow}> 
+      <View style={styles.datePresetRow}>
+        {[
+          { label: 'Today', days: 1 },
+          { label: 'Last 2 days', days: 2 },
+          { label: 'Last 7 days', days: 7 },
+          { label: 'Last month', days: 30 },
+        ].map((preset) => (
+          <TouchableOpacity
+            key={preset.label}
+            style={styles.presetChip}
+            onPress={() => applyDatePreset(preset.days)}
+          >
+            <Text style={styles.filterChipText}>{preset.label}</Text>
+          </TouchableOpacity>
+        ))}
+        <TouchableOpacity
+          style={[styles.presetChip, styles.clearChip]}
+          onPress={() => {
+            setDateStart('');
+            setDateEnd('');
+          }}
+        >
+          <Text style={[styles.filterChipText, styles.clearChipText]}>Clear</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.filterRow}>
         <TextInput
           style={[styles.searchInput, styles.smallInput]}
           placeholder="Expert name"
@@ -479,6 +528,12 @@ const styles = StyleSheet.create({
   filterGroup: {
     marginBottom: 12,
   },
+  datePresetRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 12,
+    marginHorizontal: 16,
+  },
   filterLabel: {
     color: '#4b5563',
     fontSize: 12,
@@ -496,6 +551,22 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     marginRight: 8,
     marginBottom: 8,
+  },
+  presetChip: {
+    backgroundColor: '#eef2ff',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  clearChip: {
+    backgroundColor: '#f8fafc',
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+  },
+  clearChipText: {
+    color: '#374151',
   },
   filterChipActive: {
     backgroundColor: '#2563eb',

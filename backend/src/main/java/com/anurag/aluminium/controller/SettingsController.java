@@ -23,17 +23,53 @@ public class SettingsController {
     static class SettingsResponse {
         @JsonProperty("default_rate")
         private Double defaultRate;
+
+        @JsonProperty("company_name")
+        private String companyName;
+
+        @JsonProperty("company_address")
+        private String companyAddress;
+
+        @JsonProperty("company_contact_numbers")
+        private String companyContactNumbers;
+
+        @JsonProperty("company_owners")
+        private String companyOwners;
+
+        @JsonProperty("company_logo_url")
+        private String companyLogoUrl;
     }
 
     @GetMapping
     public ResponseEntity<SettingsResponse> getSettings() {
         Settings settings = settingsService.getSettings();
-        return ResponseEntity.ok(new SettingsResponse(settings.getDefaultRate()));
+        return ResponseEntity.ok(new SettingsResponse(
+                settings.getDefaultRate(),
+                settings.getCompanyName(),
+                settings.getCompanyAddress(),
+                settings.getCompanyContactNumbers(),
+                settings.getCompanyOwners(),
+                settings.getCompanyLogoUrl()
+        ));
     }
 
     @PutMapping
     public ResponseEntity<SettingsResponse> updateSettings(@RequestBody SettingsRequest request) {
-        Settings settings = settingsService.updateSettings(request.getDefaultRate());
-        return ResponseEntity.ok(new SettingsResponse(settings.getDefaultRate()));
+        Settings settings = settingsService.updateSettings(
+                request.getDefaultRate(),
+                request.getCompanyName(),
+                request.getCompanyAddress(),
+                request.getCompanyContactNumbers(),
+                request.getCompanyOwners(),
+                request.getCompanyLogoUrl()
+        );
+        return ResponseEntity.ok(new SettingsResponse(
+                settings.getDefaultRate(),
+                settings.getCompanyName(),
+                settings.getCompanyAddress(),
+                settings.getCompanyContactNumbers(),
+                settings.getCompanyOwners(),
+                settings.getCompanyLogoUrl()
+        ));
     }
 }

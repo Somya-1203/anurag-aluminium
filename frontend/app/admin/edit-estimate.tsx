@@ -29,6 +29,7 @@ export default function EditEstimate() {
   const [saving, setSaving] = useState(false);
   const [generatingPDF, setGeneratingPDF] = useState(false);
   const [defaultRate, setDefaultRate] = useState(100);
+  const [companySettings, setCompanySettings] = useState<any>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   useEffect(() => {
@@ -51,7 +52,8 @@ export default function EditEstimate() {
   const loadSettings = async () => {
     try {
       const settings = await api.getSettings();
-      setDefaultRate(settings.default_rate);
+      setDefaultRate(settings.default_rate ?? 100);
+      setCompanySettings(settings);
     } catch (error) {
       console.error('Error loading settings:', error);
     }
@@ -100,7 +102,7 @@ export default function EditEstimate() {
     setGeneratingPDF(true);
     try {
       // Generate HTML
-      const htmlContent = generateEstimatePDF(estimate);
+      const htmlContent = generateEstimatePDF(estimate, companySettings);
 
       // Create PDF
       const { uri } = await Print.printToFileAsync({
@@ -255,7 +257,7 @@ export default function EditEstimate() {
             <Text style={styles.label}>Discount (₹)</Text>
             <TextInput
               style={styles.input}
-              value={estimate.discount?.toString() || '0'}
+              value={estimate.discount != null && estimate.discount !== 0 ? estimate.discount.toString() : ''}
               onChangeText={(text) =>
                 setEstimate({ ...estimate, discount: text })
               }
@@ -269,7 +271,7 @@ export default function EditEstimate() {
             <Text style={styles.label}>Cartage (₹)</Text>
             <TextInput
               style={styles.input}
-              value={estimate.cartage?.toString() || '0'}
+              value={estimate.cartage != null && estimate.cartage !== 0 ? estimate.cartage.toString() : ''}
               onChangeText={(text) =>
                 setEstimate({ ...estimate, cartage: text })
               }
@@ -283,7 +285,7 @@ export default function EditEstimate() {
             <Text style={styles.label}>Advance Received (₹)</Text>
             <TextInput
               style={styles.input}
-              value={estimate.advance_received?.toString() || '0'}
+              value={estimate.advance_received != null && estimate.advance_received !== 0 ? estimate.advance_received.toString() : ''}
               onChangeText={(text) =>
                 setEstimate({ ...estimate, advance_received: text })
               }

@@ -1,6 +1,18 @@
-export const generateEstimatePDF = (estimate: any) => {
-  const companyLogoBase64 = 'https://customer-assets.emergentagent.com/job_anurag-estimate-tool/artifacts/s326dyhr_image.png';
-  
+export const generateEstimatePDF = (estimate: any, companyInfo: any = {}) => {
+  const companyName = companyInfo.company_name || 'Anurag Aluminium & Glass House';
+  const companyAddress = companyInfo.company_address || '55, Sainath Colony, Alakhdham Nagar, Indore Road, Ujjain';
+  const companyContacts = (companyInfo.company_contact_numbers || '9827086001\n9131001671').split('\n');
+  const companyOwners = (companyInfo.company_owners || 'Sandeep Jain\nMehul Jain').split('\n');
+  const companyLogoUrl = companyInfo.company_logo_url || 'https://customer-assets.emergentagent.com/job_anurag-estimate-tool/artifacts/s326dyhr_image.png';
+  const logoSection = companyLogoUrl
+    ? `<img src="${companyLogoUrl}" class="logo" alt="Company Logo" />`
+    : `<div class="company-logo-text">${companyName}</div>`;
+
+  const formatAmount = (value: any) => {
+    const numberValue = Number(value);
+    return Number.isFinite(numberValue) ? numberValue.toFixed(2) : '-';
+  };
+
   return `
 <!DOCTYPE html>
 <html>
@@ -33,6 +45,13 @@ export const generateEstimatePDF = (estimate: any) => {
       height: auto;
       margin-bottom: 15px;
     }
+
+    .company-logo-text {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 15px;
+      color: #1a1a1a;
+    }
     
     .company-name {
       font-size: 32px;
@@ -59,6 +78,13 @@ export const generateEstimatePDF = (estimate: any) => {
       gap: 20px;
       margin-top: 10px;
       font-weight: bold;
+    }
+    .company-owners {
+      text-align: center;
+      font-size: 14px;
+      color: #444;
+      margin-top: 8px;
+      line-height: 1.5;
     }
     
     .estimate-title {
@@ -250,14 +276,15 @@ export const generateEstimatePDF = (estimate: any) => {
 </head>
 <body>
   <div class="header">
-    <img src="${companyLogoBase64}" class="logo" alt="Company Logo" />
+    ${logoSection}
+    <div class="company-name">${companyName}</div>
     <div class="company-address">
-      55, Sainath Colony, Alakhdham Nagar, Indore Road, Ujjain
+      ${companyAddress.replace(/\n/g, '<br />')}
     </div>
     <div class="company-contacts">
-      <span>9827086001</span>
-      <span>9131001671</span>
+      ${companyContacts.map((number: string) => `<span>${number}</span>`).join('')}
     </div>
+    ${companyOwners.length > 0 ? `<div class="company-owners">${companyOwners.join(' | ')}</div>` : ''}
   </div>
   
   <div class="estimate-title">ESTIMATE</div>
@@ -316,8 +343,8 @@ export const generateEstimatePDF = (estimate: any) => {
             <td class="text-center">${m.height_inches.toFixed(2)}</td>
             <td class="text-right">${m.area_sqft.toFixed(3)}</td>
             <td class="text-right">${m.quantity}</td>
-            <td class="text-right">${m.rate ? m.rate.toFixed(2) : '-'}</td>
-            <td class="text-right"><strong>${m.amount ? m.amount.toFixed(2) : '-'}</strong></td>
+            <td class="text-right">${m.rate ? formatAmount(m.rate) : '-'}</td>
+            <td class="text-right"><strong>${m.amount ? formatAmount(m.amount) : '-'}</strong></td>
           </tr>
         `).join('')}
       </tbody>
@@ -327,37 +354,37 @@ export const generateEstimatePDF = (estimate: any) => {
   <div class="totals-section">
     <div class="total-row subtotal">
       <span>Subtotal:</span>
-      <span>₹ ${estimate.subtotal.toFixed(2)}</span>
+      <span>₹ ${formatAmount(estimate.subtotal)}</span>
     </div>
-    ${estimate.discount > 0 ? `
+    ${Number(estimate.discount) > 0 ? `
       <div class="total-row discount">
         <span>Discount:</span>
-        <span>- ₹ ${estimate.discount.toFixed(2)}</span>
+        <span>- ₹ ${formatAmount(estimate.discount)}</span>
       </div>
     ` : ''}
-    ${estimate.cartage > 0 ? `
+    ${Number(estimate.cartage) > 0 ? `
       <div class="total-row">
         <span>Cartage:</span>
-        <span>₹ ${estimate.cartage.toFixed(2)}</span>
+        <span>₹ ${formatAmount(estimate.cartage)}</span>
       </div>
     ` : ''}
     <div class="total-row final">
       <span>Total Amount:</span>
-      <span>₹ ${estimate.total.toFixed(2)}</span>
+      <span>₹ ${formatAmount(estimate.total)}</span>
     </div>
   </div>
   
-  ${estimate.advance_received > 0 || estimate.payment_status !== 'pending' ? `
+  ${Number(estimate.advance_received) > 0 || estimate.payment_status !== 'pending' ? `
     <div class="payment-info ${estimate.payment_status}">
-      ${estimate.advance_received > 0 ? `
+      ${Number(estimate.advance_received) > 0 ? `
         <div class="payment-row">
           <span><strong>Advance Received:</strong></span>
-          <span>₹ ${estimate.advance_received.toFixed(2)}</span>
+          <span>₹ ${formatAmount(estimate.advance_received)}</span>
         </div>
       ` : ''}
       <div class="payment-row">
         <span><strong>Balance Due:</strong></span>
-        <span>₹ ${(estimate.total - estimate.advance_received).toFixed(2)}</span>
+        <span>₹ ${formatAmount(Number(estimate.total) - Number(estimate.advance_received))}</span>
       </div>
       <div class="payment-row">
         <span><strong>Payment Status:</strong></span>
@@ -389,7 +416,7 @@ export const generateEstimatePDF = (estimate: any) => {
   
   <div class="footer">
     <p>Thank you for your business!</p>
-    <p>Anurag Aluminium & Glass House</p>
+    <p>${companyName}</p>
   </div>
 </body>
 </html>

@@ -15,6 +15,11 @@ import { Ionicons } from '@expo/vector-icons';
 export default function Settings() {
   const router = useRouter();
   const [defaultRate, setDefaultRate] = useState('100');
+  const [companyName, setCompanyName] = useState('');
+  const [companyAddress, setCompanyAddress] = useState('');
+  const [companyContacts, setCompanyContacts] = useState('');
+  const [companyOwners, setCompanyOwners] = useState('');
+  const [companyLogoUrl, setCompanyLogoUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -26,7 +31,12 @@ export default function Settings() {
     setLoading(true);
     try {
       const data = await api.getSettings();
-      setDefaultRate(data.default_rate.toString());
+      setDefaultRate((data.default_rate ?? 100).toString());
+      setCompanyName(data.company_name || 'Anurag Aluminium & Glass House');
+      setCompanyAddress(data.company_address || '55, Sainath Colony, Alakhdham Nagar\nIndore Road, Ujjain');
+      setCompanyContacts(data.company_contact_numbers || '9827086001\n9131001671');
+      setCompanyOwners(data.company_owners || 'Sandeep Jain\nMehul Jain');
+      setCompanyLogoUrl(data.company_logo_url || '');
     } catch (error) {
       console.error('Error loading settings:', error);
     } finally {
@@ -43,7 +53,14 @@ export default function Settings() {
 
     setSaving(true);
     try {
-      await api.updateSettings({ default_rate: rate });
+      await api.updateSettings({
+        default_rate: rate,
+        company_name: companyName,
+        company_address: companyAddress,
+        company_contact_numbers: companyContacts,
+        company_owners: companyOwners,
+        company_logo_url: companyLogoUrl,
+      });
       Alert.alert('Success', 'Settings updated successfully');
     } catch (error) {
       Alert.alert('Error', 'Failed to update settings');
@@ -107,34 +124,67 @@ export default function Settings() {
             <Text style={styles.cardTitle}>Company Information</Text>
           </View>
 
-          <View style={styles.infoSection}>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Company Name:</Text>
-              <Text style={styles.infoValue}>
-                Anurag Aluminium & Glass House
-              </Text>
-            </View>
+          <Text style={styles.description}>
+            Update the business name, address, contact numbers, owners, and logo used in estimates and PDF documents.
+          </Text>
 
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Address:</Text>
-              <Text style={styles.infoValue}>
-                55, Sainath Colony, Alakhdham Nagar{' \n'}Indore Road, Ujjain
-              </Text>
-            </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Company Name</Text>
+            <TextInput
+              style={styles.input}
+              value={companyName}
+              onChangeText={setCompanyName}
+              placeholder="Company name"
+              placeholderTextColor="#9ca3af"
+            />
+          </View>
 
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Contact Numbers:</Text>
-              <Text style={styles.infoValue}>
-                9827086001{' \n'}9131001671
-              </Text>
-            </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Address</Text>
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              value={companyAddress}
+              onChangeText={setCompanyAddress}
+              placeholder="Company address"
+              placeholderTextColor="#9ca3af"
+              multiline
+            />
+          </View>
 
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Owners:</Text>
-              <Text style={styles.infoValue}>
-                Sandeep Jain{' \n'}Mehul Jain
-              </Text>
-            </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Contact Numbers</Text>
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              value={companyContacts}
+              onChangeText={setCompanyContacts}
+              placeholder="Enter one number per line"
+              placeholderTextColor="#9ca3af"
+              multiline
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Owners</Text>
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              value={companyOwners}
+              onChangeText={setCompanyOwners}
+              placeholder="Enter owner names"
+              placeholderTextColor="#9ca3af"
+              multiline
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Logo URL</Text>
+            <TextInput
+              style={styles.input}
+              value={companyLogoUrl}
+              onChangeText={setCompanyLogoUrl}
+              placeholder="Optional logo image URL"
+              autoCapitalize="none"
+              placeholderTextColor="#9ca3af"
+            />
           </View>
         </View>
 
@@ -233,6 +283,10 @@ const styles = StyleSheet.create({
     padding: 12,
     fontSize: 16,
     color: '#1f2937',
+  },
+  textArea: {
+    minHeight: 88,
+    textAlignVertical: 'top',
   },
   saveButton: {
     backgroundColor: '#2563eb',

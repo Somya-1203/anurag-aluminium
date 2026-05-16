@@ -8,6 +8,7 @@ import {
   Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useIsFocused } from '@react-navigation/native';
 import { useAuthStore } from '../../store/authStore';
 import { api } from '../../utils/api';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,7 +16,11 @@ import { Ionicons } from '@expo/vector-icons';
 export default function AdminHome() {
   const router = useRouter();
   const { user, logout } = useAuthStore();
+  const isFocused = useIsFocused();
   const [unreadCount, setUnreadCount] = useState(0);
+  const [companyName, setCompanyName] = useState('Anurag Aluminium');
+  const [companyAddress, setCompanyAddress] = useState('55, Sainath Colony, Alakhdham Nagar\nIndore Road, Ujjain');
+  const [companyContacts, setCompanyContacts] = useState('9827086001\n9131001671');
 
   useEffect(() => {
     const loadNotifications = async () => {
@@ -27,8 +32,23 @@ export default function AdminHome() {
         console.error('Error loading unread notifications:', error);
       }
     };
-    loadNotifications();
-  }, [user]);
+
+    const loadSettings = async () => {
+      try {
+        const data = await api.getSettings();
+        setCompanyName(data.company_name || 'Anurag Aluminium');
+        setCompanyAddress(data.company_address || '55, Sainath Colony, Alakhdham Nagar\nIndore Road, Ujjain');
+        setCompanyContacts(data.company_contact_numbers || '9827086001\n9131001671');
+      } catch (error) {
+        console.error('Error loading company settings:', error);
+      }
+    };
+
+    if (isFocused) {
+      loadNotifications();
+      loadSettings();
+    }
+  }, [user, isFocused]);
 
   const handleLogout = () => {
     Alert.alert('Logout', 'Are you sure you want to logout?', [
@@ -105,15 +125,14 @@ export default function AdminHome() {
       <ScrollView style={styles.content}>
         {/* Company Info */}
         <View style={styles.companyCard}>
-          <Text style={styles.companyName}>Anurag Aluminium</Text>
+          <Text style={styles.companyName}>{companyName}</Text>
           <Text style={styles.companySubName}>& Glass House</Text>
           <View style={styles.companyDivider} />
-          <Text style={styles.companyAddress}>
-            55, Sainath Colony, Alakhdham Nagar{' \n'}Indore Road, Ujjain
-          </Text>
+          <Text style={styles.companyAddress}>{companyAddress}</Text>
           <View style={styles.companyContacts}>
-            <Text style={styles.companyContact}>9827086001</Text>
-            <Text style={styles.companyContact}>9131001671</Text>
+            {companyContacts.split('\n').map((contact, index) => (
+              <Text key={index} style={styles.companyContact}>{contact}</Text>
+            ))}
           </View>
         </View>
 
