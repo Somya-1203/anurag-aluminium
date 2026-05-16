@@ -14,41 +14,81 @@ import { Ionicons } from '@expo/vector-icons';
 
 export default function AdminEstimates() {
   const router = useRouter();
-  const [estimates, setEstimates] = useState([]);
-  const [filteredEstimates, setFilteredEstimates] = useState([]);
+  const [estimates, setEstimates] = useState<any[]>([]);
+  const [filteredEstimates, setFilteredEstimates] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [expertFilter, setExpertFilter] = useState('');
+  const [groupBy, setGroupBy] = useState<'none' | 'daily' | 'monthly'>('none');
+  const [sortOption, setSortOption] = useState<'newest' | 'oldest' | 'totalAsc' | 'totalDesc'>('newest');
+  const [dateStart, setDateStart] = useState('');
+  const [dateEnd, setDateEnd] = useState('');
 
   useEffect(() => {
     loadEstimates();
   }, []);
 
   useEffect(() => {
-    if (searchQuery.trim()) {
-      const filtered = estimates.filter(
-        (e: any) =>
-          e.customer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          e.mobile_number.includes(searchQuery) ||
-          e.site_address.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      setFilteredEstimates(filtered);
-    } else {
-      setFilteredEstimates(estimates);
-    }
-  }, [searchQuery, estimates]);
+    const filtered = estimates.filter((estimate) => {
+      const query = searchQuery.trim().toLowerCase();
+      const matchesQuery = !query ||
+        estimate.customer_name?.toLowerCase().includes(query) ||
+        estimate.mobile_number?.includes(query) ||
+        estimate.site_address?.toLowerCase().includes(query) ||
+        estimate.field_expert_name?.toLowerCase().includes(query) ||
+        estimate.order_id?.toLowerCase().includes(query);
+
+      const matchesStatus = statusFilter === 'all' || estimate.payment_status === statusFilter;
+      const matchesExpert = !expertFilter || estimate.field_expert_name === expertFilter;
+
+      const createdAt = new Date(estimate.created_at);
+      const startDate = dateStart ? new Date(dateStart) : null;
+      const endDate = dateEnd ? new Date(dateEnd) : null;
+      const matchesDate = (!startDate || createdAt >= startDate) && (!endDate || createdAt <= endDate);
+
+      return matchesQuery && matchesStatus && matchesExpert && matchesDate;
+    });
+
+    filtered.sort((a, b) => {
+      if (sortOption === 'newest') {
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+      if (sortOption === 'oldest') {
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      }
+      if (sortOption === 'totalAsc') {
+        return a.total - b.total;
+      }
+      return b.total - a.total;
+    });
+
+    setFilteredEstimates(filtered);
+  }, [estimates, searchQuery, statusFilter, expertFilter, groupBy, sortOption, dateStart, dateEnd]);
 
   const loadEstimates = async () => {
     setLoading(true);
     try {
       const data = await api.getEstimates();
       setEstimates(data);
-      setFilteredEstimates(data);
     } catch (error) {
       console.error('Error loading estimates:', error);
     } finally {
       setLoading(false);
     }
   };
+
+  const groupedEstimates = groupBy !== 'none'
+    ? filteredEstimates.reduce((groups: Record<string, any[]>, estimate) => {
+        const createdAt = new Date(estimate.created_at);
+        const key = groupBy === 'daily'
+          ? createdAt.toLocaleDateString()
+          : `${createdAt.toLocaleString('default', { month: 'long' })} ${createdAt.getFullYear()}`;
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(estimate);
+        return groups;
+      }, {})
+    : null;
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -72,23 +112,77 @@ export default function AdminEstimates() {
     }
   };
 
+  const renderEstimateCard = (estimate: any) => (
+    <TouchableOpacity
+      key={estimate.id}
+      style={styles.estimateCard}
+      onPress={() =>
+        router.push({
+          pathname: '/admin/edit-estimate',
+          params: { id: estimate.id },
+        })
+      }
+    >
+      <View style={styles.estimateHeader}>
+        <View style={styles.estimateHeaderLeft}>
+          <Text style={styles.customerName}>{estimate.customer_name}</Text>
+          <Text style={styles.fieldExpert}>By: {estimate.field_expert_name || 'No expert'}</Text>
+        </View>
+        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(estimate.payment_status) }]}> 
+          <Text style={[styles.statusText, { color: getStatusTextColor(estimate.payment_status) }]}> 
+            {estimate.payment_status === 'full'
+              ? 'Paid'
+              : estimate.payment_status === 'partial'
+              ? 'Partial'
+              : 'Pending'}
+          </Text>
+        </View>
+      </View>
+
+      <Text style={styles.address}>{estimate.site_address}</Text>
+      <Text style={styles.phone}>{estimate.mobile_number}</Text>
+
+      <View style={styles.estimateFooter}>
+        <View>
+          <Text style={styles.footerLabel}>Windows</Text>
+          <Text style={styles.footerValue}>{estimate.measurements?.length || 0}</Text>
+        </View>
+        <View>
+          <Text style={styles.footerLabel}>Total</Text>
+          <Text style={styles.footerValue}>₹{estimate.total?.toFixed(2) || '0.00'}</Text>
+        </View>
+        <View>
+          <Text style={styles.footerLabel}>Date</Text>
+          <Text style={styles.footerValue}>{new Date(estimate.created_at).toLocaleDateString()}</Text>
+        </View>
+      </View>
+
+      <View style={styles.arrowContainer}>
+        <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
+      </View>
+    </TouchableOpacity>
+  );
+
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#1f2937" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>All Estimates</Text>
-        <View style={{ width: 24 }} />
+        <TouchableOpacity
+          style={styles.createButton}
+          onPress={() => router.push('/admin/create-estimate')}
+        >
+          <Ionicons name="add" size={20} color="#ffffff" />
+        </TouchableOpacity>
       </View>
 
-      {/* Search Bar */}
       <View style={styles.searchContainer}>
         <Ionicons name="search" size={20} color="#6b7280" />
         <TextInput
           style={styles.searchInput}
-          placeholder="Search by customer, phone, address..."
+          placeholder="Search order, customer, expert or phone"
           value={searchQuery}
           onChangeText={setSearchQuery}
           placeholderTextColor="#9ca3af"
@@ -98,6 +192,118 @@ export default function AdminEstimates() {
             <Ionicons name="close-circle" size={20} color="#6b7280" />
           </TouchableOpacity>
         )}
+      </View>
+
+      <View style={styles.filterBar}>
+        <View style={styles.filterGroup}>
+          <Text style={styles.filterLabel}>Status</Text>
+          <View style={styles.chipRow}>
+            {['all', 'pending', 'partial', 'full'].map((status) => (
+              <TouchableOpacity
+                key={status}
+                style={[
+                  styles.filterChip,
+                  statusFilter === status && styles.filterChipActive,
+                ]}
+                onPress={() => setStatusFilter(status)}
+              >
+                <Text
+                  style={[
+                    styles.filterChipText,
+                    statusFilter === status && styles.filterChipTextActive,
+                  ]}
+                >
+                  {status === 'all'
+                    ? 'All'
+                    : status === 'partial'
+                    ? 'Partial'
+                    : status === 'full'
+                    ? 'Paid'
+                    : 'Pending'}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.filterGroup}>
+          <Text style={styles.filterLabel}>Group</Text>
+          <View style={styles.chipRow}>
+            {['none', 'daily', 'monthly'].map((group) => (
+              <TouchableOpacity
+                key={group}
+                style={[
+                  styles.filterChip,
+                  groupBy === group && styles.filterChipActive,
+                ]}
+                onPress={() => setGroupBy(group as any)}
+              >
+                <Text
+                  style={[
+                    styles.filterChipText,
+                    groupBy === group && styles.filterChipTextActive,
+                  ]}
+                >
+                  {group === 'none' ? 'None' : group.charAt(0).toUpperCase() + group.slice(1)}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      </View>
+
+      <View style={styles.filterRow}> 
+        <TextInput
+          style={[styles.searchInput, styles.smallInput]}
+          placeholder="Expert name"
+          value={expertFilter}
+          onChangeText={setExpertFilter}
+          placeholderTextColor="#9ca3af"
+        />
+        <TextInput
+          style={[styles.searchInput, styles.smallInput]}
+          placeholder="From (YYYY-MM-DD)"
+          value={dateStart}
+          onChangeText={setDateStart}
+          placeholderTextColor="#9ca3af"
+        />
+        <TextInput
+          style={[styles.searchInput, styles.smallInput]}
+          placeholder="To (YYYY-MM-DD)"
+          value={dateEnd}
+          onChangeText={setDateEnd}
+          placeholderTextColor="#9ca3af"
+        />
+      </View>
+
+      <View style={styles.sortBar}>
+        <Text style={styles.filterLabel}>Sort</Text>
+        <View style={styles.chipRow}>
+          {[
+            { key: 'newest', label: 'Newest' },
+            { key: 'oldest', label: 'Oldest' },
+            { key: 'totalDesc', label: 'Total ↓' },
+            { key: 'totalAsc', label: 'Total ↑' },
+          ].map((option) => (
+            <TouchableOpacity
+              key={option.key}
+              style={[
+                styles.filterChip,
+                sortOption === option.key && styles.filterChipActive,
+              ]}
+              onPress={() => setSortOption(option.key as any)}
+            >
+              <Text
+                style={[
+                  styles.filterChipText,
+                  sortOption === option.key && styles.filterChipTextActive,
+                ]}
+              >
+                {option.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
       </View>
 
       <ScrollView
@@ -110,79 +316,19 @@ export default function AdminEstimates() {
           <View style={styles.emptyState}>
             <Ionicons name="document-text-outline" size={64} color="#d1d5db" />
             <Text style={styles.emptyText}>
-              {searchQuery ? 'No estimates found' : 'No estimates yet'}
+              {searchQuery || expertFilter || dateStart || dateEnd
+                ? 'No estimates match the current filters'
+                : 'No estimates yet'}
             </Text>
           </View>
+        ) : groupBy === 'none' ? (
+          filteredEstimates.map(renderEstimateCard)
         ) : (
-          filteredEstimates.map((estimate: any) => (
-            <TouchableOpacity
-              key={estimate.id}
-              style={styles.estimateCard}
-              onPress={() =>
-                router.push({
-                  pathname: '/admin/edit-estimate',
-                  params: { id: estimate.id },
-                })
-              }
-            >
-              <View style={styles.estimateHeader}>
-                <View style={styles.estimateHeaderLeft}>
-                  <Text style={styles.customerName}>
-                    {estimate.customer_name}
-                  </Text>
-                  <Text style={styles.fieldExpert}>
-                    By: {estimate.field_expert_name}
-                  </Text>
-                </View>
-                <View
-                  style={[
-                    styles.statusBadge,
-                    { backgroundColor: getStatusColor(estimate.payment_status) },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.statusText,
-                      { color: getStatusTextColor(estimate.payment_status) },
-                    ]}
-                  >
-                    {estimate.payment_status === 'full'
-                      ? 'Paid'
-                      : estimate.payment_status === 'partial'
-                      ? 'Partial'
-                      : 'Pending'}
-                  </Text>
-                </View>
-              </View>
-
-              <Text style={styles.address}>{estimate.site_address}</Text>
-              <Text style={styles.phone}>{estimate.mobile_number}</Text>
-
-              <View style={styles.estimateFooter}>
-                <View>
-                  <Text style={styles.footerLabel}>Windows</Text>
-                  <Text style={styles.footerValue}>
-                    {estimate.measurements.length}
-                  </Text>
-                </View>
-                <View>
-                  <Text style={styles.footerLabel}>Total</Text>
-                  <Text style={styles.footerValue}>
-                    ₹{estimate.total.toFixed(2)}
-                  </Text>
-                </View>
-                <View>
-                  <Text style={styles.footerLabel}>Date</Text>
-                  <Text style={styles.footerValue}>
-                    {new Date(estimate.created_at).toLocaleDateString()}
-                  </Text>
-                </View>
-              </View>
-
-              <View style={styles.arrowContainer}>
-                <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
-              </View>
-            </TouchableOpacity>
+          Object.entries(groupedEstimates || {}).map(([groupKey, estimates]) => (
+            <View key={groupKey} style={styles.groupSection}>
+              <Text style={styles.groupTitle}>{groupKey}</Text>
+              {estimates.map(renderEstimateCard)}
+            </View>
           ))
         )}
       </ScrollView>
@@ -312,5 +458,82 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 16,
     top: '50%',
+  },
+  createButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#2563eb',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  filterBar: {
+    backgroundColor: '#ffffff',
+    marginHorizontal: 16,
+    marginBottom: 12,
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  filterGroup: {
+    marginBottom: 12,
+  },
+  filterLabel: {
+    color: '#4b5563',
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  chipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  filterChip: {
+    backgroundColor: '#f3f4f6',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  filterChipActive: {
+    backgroundColor: '#2563eb',
+  },
+  filterChipText: {
+    color: '#374151',
+    fontSize: 13,
+  },
+  filterChipTextActive: {
+    color: '#ffffff',
+  },
+  filterRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginHorizontal: 16,
+    marginBottom: 12,
+  },
+  smallInput: {
+    flex: 1,
+    marginRight: 8,
+  },
+  sortBar: {
+    backgroundColor: '#ffffff',
+    marginHorizontal: 16,
+    marginBottom: 12,
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  groupSection: {
+    marginBottom: 18,
+  },
+  groupTitle: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1f2937',
   },
 });

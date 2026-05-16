@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -9,11 +9,26 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../store/authStore';
+import { api } from '../../utils/api';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function AdminHome() {
   const router = useRouter();
   const { user, logout } = useAuthStore();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    const loadNotifications = async () => {
+      if (!user?.id) return;
+      try {
+        const count = await api.getUnreadNotificationCount(user.id);
+        setUnreadCount(count.unread_count || 0);
+      } catch (error) {
+        console.error('Error loading unread notifications:', error);
+      }
+    };
+    loadNotifications();
+  }, [user]);
 
   const handleLogout = () => {
     Alert.alert('Logout', 'Are you sure you want to logout?', [
@@ -36,6 +51,27 @@ export default function AdminHome() {
       description: 'View and manage all estimates',
       route: '/admin/estimates',
       color: '#2563eb',
+    },
+    {
+      icon: 'people',
+      title: 'Field Experts',
+      description: 'Manage field experts and assignments',
+      route: '/admin/field-experts',
+      color: '#f59e0b',
+    },
+    {
+      icon: 'add-circle',
+      title: 'Create Estimate',
+      description: 'Create a new estimate manually',
+      route: '/admin/create-estimate',
+      color: '#10b981',
+    },
+    {
+      icon: 'notifications',
+      title: 'Notifications',
+      description: `${unreadCount} unread notification${unreadCount === 1 ? '' : 's'}`,
+      route: '/admin/notifications',
+      color: '#ef4444',
     },
     {
       icon: 'albums',

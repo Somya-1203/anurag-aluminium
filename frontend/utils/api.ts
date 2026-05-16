@@ -133,6 +133,22 @@ export const api = {
     return response.json();
   },
 
+  activateFieldExpert: async (id: string) => {
+    const response = await fetch(`${API_URL}/api/field-experts/${id}/activate`, {
+      method: 'PUT',
+    });
+    if (!response.ok) throw new Error('Failed to activate field expert');
+    return response.json();
+  },
+
+  deactivateFieldExpert: async (id: string) => {
+    const response = await fetch(`${API_URL}/api/field-experts/${id}/deactivate`, {
+      method: 'PUT',
+    });
+    if (!response.ok) throw new Error('Failed to deactivate field expert');
+    return response.json();
+  },
+
   deleteFieldExpert: async (id: string) => {
     const response = await fetch(`${API_URL}/api/field-experts/${id}`, {
       method: 'DELETE',
