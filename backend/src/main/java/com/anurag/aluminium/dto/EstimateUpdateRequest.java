@@ -21,4 +21,16 @@ public class EstimateUpdateRequest {
     
     @JsonProperty("payment_status")
     private String paymentStatus = "pending";
+    
+    @JsonProperty("field_expert_name")
+    private String fieldExpertName;
+    
+    @JsonProperty("customer_name")
+    private String customerName;
+    
+    @JsonProperty("site_address")
+    private String siteAddress;
+    
+    @JsonProperty("mobile_number")
+    private String mobileNumber;
 }

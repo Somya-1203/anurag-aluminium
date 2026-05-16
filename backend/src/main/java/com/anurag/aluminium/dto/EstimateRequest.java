@@ -33,4 +33,22 @@ public class EstimateRequest {
     @Valid
     @NotEmpty(message = "measurements is required and must contain at least one item")
     private List<MeasurementItem> measurements;
+    
+    @JsonProperty("created_by")
+    private String createdBy;
+    
+    @JsonProperty("created_by_name")
+    private String createdByName;
+    
+    @JsonProperty("discount")
+    private Double discount;
+    
+    @JsonProperty("advance_received")
+    private Double advanceReceived;
+    
+    @JsonProperty("cartage")
+    private Double cartage;
+    
+    @JsonProperty("payment_status")
+    private String paymentStatus;
 }

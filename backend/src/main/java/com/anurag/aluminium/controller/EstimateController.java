@@ -71,4 +71,33 @@ public class EstimateController {
             return ResponseEntity.notFound().build();
         }
     }
+
+    @GetMapping("/date-range")
+    public ResponseEntity<List<Estimate>> getEstimatesByDate(
+            @RequestParam String startDate,
+            @RequestParam String endDate) {
+        try {
+            java.time.LocalDateTime start = java.time.LocalDateTime.parse(startDate);
+            java.time.LocalDateTime end = java.time.LocalDateTime.parse(endDate);
+            return ResponseEntity.ok(estimateService.getEstimatesByDate(start, end));
+        } catch (Exception e) {
+            logger.error("Error fetching estimates by date range: {}", e.getMessage());
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @GetMapping("/payment-status/{status}")
+    public ResponseEntity<List<Estimate>> getEstimatesByPaymentStatus(@PathVariable String status) {
+        return ResponseEntity.ok(estimateService.getEstimatesByPaymentStatus(status));
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<Estimate>> searchEstimates(@RequestParam String query) {
+        return ResponseEntity.ok(estimateService.searchEstimates(query));
+    }
+
+    @GetMapping("/field-expert/{fieldExpertName}")
+    public ResponseEntity<List<Estimate>> getEstimatesByFieldExpert(@PathVariable String fieldExpertName) {
+        return ResponseEntity.ok(estimateService.getEstimatesByFieldExpertName(fieldExpertName));
+    }
 }

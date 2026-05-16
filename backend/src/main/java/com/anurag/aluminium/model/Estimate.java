@@ -45,6 +45,15 @@ public class Estimate {
     @JsonProperty("payment_status")
     private String paymentStatus = "pending"; // pending, partial, full
     
+    @JsonProperty("created_by")
+    private String createdBy; // "admin" or "field_expert"
+    
+    @JsonProperty("created_by_name")
+    private String createdByName; // Name of the user who created it
+    
+    @JsonProperty("order_id")
+    private String orderId; // Generated order ID for tracking
+    
     @CreatedDate
     @JsonProperty("created_at")
     private LocalDateTime createdAt;

@@ -82,7 +82,92 @@ export const api = {
     return response.json();
   },
 
-  // Settings
+  searchEstimates: async (query: string) => {
+    const response = await fetch(`${API_URL}/api/estimates/search?query=${encodeURIComponent(query)}`);
+    return response.json();
+  },
+
+  getEstimatesByDate: async (startDate: string, endDate: string) => {
+    const response = await fetch(`${API_URL}/api/estimates/date-range?startDate=${startDate}&endDate=${endDate}`);
+    return response.json();
+  },
+
+  getEstimatesByFieldExpert: async (fieldExpertName: string) => {
+    const response = await fetch(`${API_URL}/api/estimates/field-expert/${encodeURIComponent(fieldExpertName)}`);
+    return response.json();
+  },
+
+  getEstimatesByPaymentStatus: async (status: string) => {
+    const response = await fetch(`${API_URL}/api/estimates/payment-status/${status}`);
+    return response.json();
+  },
+
+  // Field Experts
+  getFieldExperts: async () => {
+    const response = await fetch(`${API_URL}/api/field-experts`);
+    return response.json();
+  },
+
+  getActiveFieldExperts: async () => {
+    const response = await fetch(`${API_URL}/api/field-experts/active`);
+    return response.json();
+  },
+
+  createFieldExpert: async (data: any) => {
+    const response = await fetch(`${API_URL}/api/field-experts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error('Failed to create field expert');
+    return response.json();
+  },
+
+  updateFieldExpert: async (id: string, data: any) => {
+    const response = await fetch(`${API_URL}/api/field-experts/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error('Failed to update field expert');
+    return response.json();
+  },
+
+  deleteFieldExpert: async (id: string) => {
+    const response = await fetch(`${API_URL}/api/field-experts/${id}`, {
+      method: 'DELETE',
+    });
+    if (!response.ok) throw new Error('Failed to delete field expert');
+    return response.json();
+  },
+
+  getFieldExpert: async (id: string) => {
+    const response = await fetch(`${API_URL}/api/field-experts/${id}`);
+    return response.json();
+  },
+
+  searchFieldExperts: async (query: string) => {
+    const response = await fetch(`${API_URL}/api/field-experts/search?query=${encodeURIComponent(query)}`);
+    return response.json();
+  },
+
+  // Notifications
+  getNotifications: async (adminId: string) => {
+    const response = await fetch(`${API_URL}/api/notifications/admin/${adminId}`);
+    return response.json();
+  },
+
+  getUnreadNotificationCount: async (adminId: string) => {
+    const response = await fetch(`${API_URL}/api/notifications/admin/${adminId}/unread-count`);
+    return response.json();
+  },
+
+  markNotificationAsRead: async (id: string) => {
+    const response = await fetch(`${API_URL}/api/notifications/${id}/mark-read`, {
+      method: 'PUT',
+    });
+    return response.json();
+  },
   getSettings: async () => {
     const response = await fetch(`${API_URL}/api/settings`);
     return response.json();
