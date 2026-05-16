@@ -7,6 +7,12 @@
     },
     "android": {
       "package": "com.dev.anuragaluminium"
+    },
+    "ios": {
+      "bundleIdentifier": "com.dev.anuragaluminium",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     }
   }
 }
