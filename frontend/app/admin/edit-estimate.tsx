@@ -62,7 +62,10 @@ export default function EditEstimate() {
     }
   };
 
+  const canManageRatesAndCharges = user?.role === 'admin';
+
   const updateMeasurementRate = (index: number, rate: string) => {
+    if (!canManageRatesAndCharges) return;
     const rateNum = parseFloat(rate) || 0;
     const newMeasurements = [...estimate.measurements];
     newMeasurements[index].rate = rateNum;
@@ -232,19 +235,21 @@ export default function EditEstimate() {
         </View>
 
         {/* Rate Management */}
-        <View style={styles.card}>
-          <View style={styles.rateHeader}>
-            <Text style={styles.cardTitle}>Set Rates</Text>
-            <TouchableOpacity
-              style={styles.applyButton}
-              onPress={applyDefaultRateToAll}
-            >
-              <Text style={styles.applyButtonText}>
-                Apply ₹{defaultRate}/sq ft to All
-              </Text>
-            </TouchableOpacity>
+        {canManageRatesAndCharges && (
+          <View style={styles.card}>
+            <View style={styles.rateHeader}>
+              <Text style={styles.cardTitle}>Set Rates</Text>
+              <TouchableOpacity
+                style={styles.applyButton}
+                onPress={applyDefaultRateToAll}
+              >
+                <Text style={styles.applyButtonText}>
+                  Apply ₹{defaultRate}/sq ft to All
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
+        )}
 
         {/* Measurements */}
         <View style={styles.card}>
@@ -265,74 +270,81 @@ export default function EditEstimate() {
                   Area: {m.area_sqft.toFixed(3)} sq ft × Qty: {m.quantity}
                 </Text>
               </View>
-              <View style={styles.rateInput}>
-                <Text style={styles.rateLabel}>Rate per sq ft (₹):</Text>
-                <TextInput
-                  style={styles.input}
-                  value={m.rate?.toString() || ''}
-                  onChangeText={(text) => updateMeasurementRate(index, text)}
-                  placeholder="Enter rate"
-                  keyboardType="decimal-pad"
-                  placeholderTextColor="#9ca3af"
-                />
-              </View>
-              {m.rate && (
-                <View style={styles.amountDisplay}>
-                  <Text style={styles.amountLabel}>Amount:</Text>
-                  <Text style={styles.amountValue}>
-                    ₹ {(m.area_sqft * m.rate * m.quantity).toFixed(2)}
-                  </Text>
-                </View>
-              )}
+              {canManageRatesAndCharges ? (
+                <>
+                  <View style={styles.rateInput}>
+                    <Text style={styles.rateLabel}>Rate per sq ft (₹):</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={m.rate?.toString() || ''}
+                      onChangeText={(text) => updateMeasurementRate(index, text)}
+                      placeholder="Enter rate"
+                      keyboardType="decimal-pad"
+                      placeholderTextColor="#9ca3af"
+                    />
+                  </View>
+                  {m.rate && (
+                    <View style={styles.amountDisplay}>
+                      <Text style={styles.amountLabel}>Amount:</Text>
+                      <Text style={styles.amountValue}>
+                        ₹ {(m.area_sqft * m.rate * m.quantity).toFixed(2)}
+                      </Text>
+                    </View>
+                  )}
+                </>
+              ) : null}
             </View>
           ))}
         </View>
 
         {/* Additional Charges */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Additional Details</Text>
+        {canManageRatesAndCharges && (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Additional Details</Text>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Discount (₹)</Text>
-            <TextInput
-              style={styles.input}
-              value={estimate.discount != null && estimate.discount !== 0 ? estimate.discount.toString() : ''}
-              onChangeText={(text) =>
-                setEstimate({ ...estimate, discount: text })
-              }
-              placeholder="Enter discount"
-              keyboardType="decimal-pad"
-              placeholderTextColor="#9ca3af"
-            />
-          </View>
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Discount (₹)</Text>
+              <TextInput
+                style={styles.input}
+                value={estimate.discount != null && estimate.discount !== 0 ? estimate.discount.toString() : ''}
+                onChangeText={(text) =>
+                  setEstimate({ ...estimate, discount: text })
+                }
+                placeholder="Enter discount"
+                keyboardType="decimal-pad"
+                placeholderTextColor="#9ca3af"
+              />
+            </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Cartage (₹)</Text>
-            <TextInput
-              style={styles.input}
-              value={estimate.cartage != null && estimate.cartage !== 0 ? estimate.cartage.toString() : ''}
-              onChangeText={(text) =>
-                setEstimate({ ...estimate, cartage: text })
-              }
-              placeholder="Enter cartage"
-              keyboardType="decimal-pad"
-              placeholderTextColor="#9ca3af"
-            />
-          </View>
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Cartage (₹)</Text>
+              <TextInput
+                style={styles.input}
+                value={estimate.cartage != null && estimate.cartage !== 0 ? estimate.cartage.toString() : ''}
+                onChangeText={(text) =>
+                  setEstimate({ ...estimate, cartage: text })
+                }
+                placeholder="Enter cartage"
+                keyboardType="decimal-pad"
+                placeholderTextColor="#9ca3af"
+              />
+            </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Advance Received (₹)</Text>
-            <TextInput
-              style={styles.input}
-              value={estimate.advance_received != null && estimate.advance_received !== 0 ? estimate.advance_received.toString() : ''}
-              onChangeText={(text) =>
-                setEstimate({ ...estimate, advance_received: text })
-              }
-              placeholder="Enter advance amount"
-              keyboardType="decimal-pad"
-              placeholderTextColor="#9ca3af"
-            />
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Advance Received (₹)</Text>
+              <TextInput
+                style={styles.input}
+                value={estimate.advance_received != null && estimate.advance_received !== 0 ? estimate.advance_received.toString() : ''}
+                onChangeText={(text) =>
+                  setEstimate({ ...estimate, advance_received: text })
+                }
+                placeholder="Enter advance amount"
+                keyboardType="decimal-pad"
+                placeholderTextColor="#9ca3af"
+              />
+            </View>
           </View>
+        )}
 
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Payment Status</Text>
@@ -350,7 +362,6 @@ export default function EditEstimate() {
               <Ionicons name="chevron-down" size={20} color="#6b7280" />
             </TouchableOpacity>
           </View>
-        </View>
 
         {/* Action Buttons */}
         <View style={styles.buttonContainer}>

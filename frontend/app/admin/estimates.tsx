@@ -24,6 +24,7 @@ export default function AdminEstimates() {
   const [sortOption, setSortOption] = useState<'newest' | 'oldest' | 'totalAsc' | 'totalDesc'>('newest');
   const [dateStart, setDateStart] = useState('');
   const [dateEnd, setDateEnd] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
 
   const parseFilterDate = (value: string) => {
     const parts = value.split('-').map((part) => Number(part));
@@ -135,56 +136,62 @@ export default function AdminEstimates() {
     }
   };
 
-  const renderEstimateCard = (estimate: any) => (
-    <TouchableOpacity
-      key={estimate.id}
-      style={styles.estimateCard}
-      onPress={() =>
-        router.push({
-          pathname: '/admin/edit-estimate',
-          params: { id: estimate.id },
-        })
-      }
-    >
-      <View style={styles.estimateHeader}>
-        <View style={styles.estimateHeaderLeft}>
-          <Text style={styles.customerName}>{estimate.customer_name}</Text>
-          <Text style={styles.fieldExpert}>By: {estimate.field_expert_name || 'No expert'}</Text>
-        </View>
-        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(estimate.payment_status) }]}> 
-          <Text style={[styles.statusText, { color: getStatusTextColor(estimate.payment_status) }]}> 
-            {estimate.payment_status === 'full'
-              ? 'Paid'
-              : estimate.payment_status === 'partial'
-              ? 'Partial'
-              : 'Pending'}
-          </Text>
-        </View>
-      </View>
+  const renderEstimateCard = (estimate: any) => {
+    const windowTypes = estimate.measurements?.map((m: any) => m.window_type).filter(Boolean) || [];
+    const windowTypeText = windowTypes.length === 0
+      ? 'Not set'
+      : windowTypes.length === 1
+      ? windowTypes[0]
+      : `${windowTypes.slice(0, 2).join(', ')}${windowTypes.length > 2 ? ` +${windowTypes.length - 2}` : ''}`;
 
-      <Text style={styles.address}>{estimate.site_address}</Text>
-      <Text style={styles.phone}>{estimate.mobile_number}</Text>
+    return (
+      <TouchableOpacity
+        key={estimate.id}
+        style={styles.estimateCard}
+        onPress={() =>
+          router.push({
+            pathname: '/admin/edit-estimate',
+            params: { id: estimate.id },
+          })
+        }
+      >
+        <View style={styles.estimateHeader}>
+          <View style={styles.estimateHeaderLeft}>
+            <Text style={styles.customerName}>{estimate.customer_name}</Text>
+            <Text style={styles.fieldExpert}>By: {estimate.field_expert_name || 'No expert'}</Text>
+          </View>
+          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(estimate.payment_status) }]}> 
+            <Text style={[styles.statusText, { color: getStatusTextColor(estimate.payment_status) }]}> 
+              {estimate.payment_status === 'full'
+                ? 'Paid'
+                : estimate.payment_status === 'partial'
+                ? 'Partial'
+                : 'Pending'}
+            </Text>
+          </View>
+        </View>
 
-      <View style={styles.estimateFooter}>
-        <View>
-          <Text style={styles.footerLabel}>Windows</Text>
-          <Text style={styles.footerValue}>{estimate.measurements?.length || 0}</Text>
-        </View>
-        <View>
-          <Text style={styles.footerLabel}>Total</Text>
-          <Text style={styles.footerValue}>₹{estimate.total?.toFixed(2) || '0.00'}</Text>
-        </View>
-        <View>
-          <Text style={styles.footerLabel}>Date</Text>
-          <Text style={styles.footerValue}>{new Date(estimate.created_at).toLocaleDateString()}</Text>
-        </View>
-      </View>
+        <Text style={styles.address}>{estimate.site_address}</Text>
+        <Text style={styles.phone}>{estimate.mobile_number}</Text>
+        <Text style={styles.windowTypeText}>Window type: {windowTypeText}</Text>
 
-      <View style={styles.arrowContainer}>
-        <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
-      </View>
-    </TouchableOpacity>
-  );
+        <View style={styles.estimateFooter}>
+          <View>
+            <Text style={styles.footerLabel}>Windows</Text>
+            <Text style={styles.footerValue}>{estimate.measurements?.length || 0}</Text>
+          </View>
+          <View>
+            <Text style={styles.footerLabel}>Total</Text>
+            <Text style={styles.footerValue}>₹{estimate.total?.toFixed(2) || '0.00'}</Text>
+          </View>
+          <View>
+            <Text style={styles.footerLabel}>Date</Text>
+            <Text style={styles.footerValue}>{new Date(estimate.created_at).toLocaleDateString()}</Text>
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -217,143 +224,157 @@ export default function AdminEstimates() {
         )}
       </View>
 
-      <View style={styles.filterBar}>
-        <View style={styles.filterGroup}>
-          <Text style={styles.filterLabel}>Status</Text>
-          <View style={styles.chipRow}>
-            {['all', 'pending', 'partial', 'full'].map((status) => (
-              <TouchableOpacity
-                key={status}
-                style={[
-                  styles.filterChip,
-                  statusFilter === status && styles.filterChipActive,
-                ]}
-                onPress={() => setStatusFilter(status)}
-              >
-                <Text
-                  style={[
-                    styles.filterChipText,
-                    statusFilter === status && styles.filterChipTextActive,
-                  ]}
-                >
-                  {status === 'all'
-                    ? 'All'
-                    : status === 'partial'
-                    ? 'Partial'
-                    : status === 'full'
-                    ? 'Paid'
-                    : 'Pending'}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        <View style={styles.filterGroup}>
-          <Text style={styles.filterLabel}>Group</Text>
-          <View style={styles.chipRow}>
-            {['none', 'daily', 'monthly'].map((group) => (
-              <TouchableOpacity
-                key={group}
-                style={[
-                  styles.filterChip,
-                  groupBy === group && styles.filterChipActive,
-                ]}
-                onPress={() => setGroupBy(group as any)}
-              >
-                <Text
-                  style={[
-                    styles.filterChipText,
-                    groupBy === group && styles.filterChipTextActive,
-                  ]}
-                >
-                  {group === 'none' ? 'None' : group.charAt(0).toUpperCase() + group.slice(1)}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-      </View>
-
-      <View style={styles.datePresetRow}>
-        {[
-          { label: 'Today', days: 1 },
-          { label: 'Last 2 days', days: 2 },
-          { label: 'Last 7 days', days: 7 },
-          { label: 'Last month', days: 30 },
-        ].map((preset) => (
-          <TouchableOpacity
-            key={preset.label}
-            style={styles.presetChip}
-            onPress={() => applyDatePreset(preset.days)}
-          >
-            <Text style={styles.filterChipText}>{preset.label}</Text>
-          </TouchableOpacity>
-        ))}
+      <View style={styles.filterToggleRow}>
         <TouchableOpacity
-          style={[styles.presetChip, styles.clearChip]}
-          onPress={() => {
-            setDateStart('');
-            setDateEnd('');
-          }}
+          style={styles.filterToggleButton}
+          onPress={() => setShowFilters((prev) => !prev)}
         >
-          <Text style={[styles.filterChipText, styles.clearChipText]}>Clear</Text>
+          <Ionicons name={showFilters ? 'arrow-down' : 'filter'} size={18} color="#ffffff" />
+          <Text style={styles.filterToggleText}>{showFilters ? 'Hide Filters' : 'Show Filters'}</Text>
         </TouchableOpacity>
       </View>
 
-      <View style={styles.filterRow}>
-        <TextInput
-          style={[styles.searchInput, styles.smallInput]}
-          placeholder="Expert name"
-          value={expertFilter}
-          onChangeText={setExpertFilter}
-          placeholderTextColor="#9ca3af"
-        />
-        <TextInput
-          style={[styles.searchInput, styles.smallInput]}
-          placeholder="From (YYYY-MM-DD)"
-          value={dateStart}
-          onChangeText={setDateStart}
-          placeholderTextColor="#9ca3af"
-        />
-        <TextInput
-          style={[styles.searchInput, styles.smallInput]}
-          placeholder="To (YYYY-MM-DD)"
-          value={dateEnd}
-          onChangeText={setDateEnd}
-          placeholderTextColor="#9ca3af"
-        />
-      </View>
+      {showFilters && (
+        <>
+          <View style={styles.filterBar}>
+            <View style={styles.filterGroup}>
+              <Text style={styles.filterLabel}>Status</Text>
+              <View style={styles.chipRow}>
+                {['all', 'pending', 'partial', 'full'].map((status) => (
+                  <TouchableOpacity
+                    key={status}
+                    style={[
+                      styles.filterChip,
+                      statusFilter === status && styles.filterChipActive,
+                    ]}
+                    onPress={() => setStatusFilter(status)}
+                  >
+                    <Text
+                      style={[
+                        styles.filterChipText,
+                        statusFilter === status && styles.filterChipTextActive,
+                      ]}
+                    >
+                      {status === 'all'
+                        ? 'All'
+                        : status === 'partial'
+                        ? 'Partial'
+                        : status === 'full'
+                        ? 'Paid'
+                        : 'Pending'}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
 
-      <View style={styles.sortBar}>
-        <Text style={styles.filterLabel}>Sort</Text>
-        <View style={styles.chipRow}>
-          {[
-            { key: 'newest', label: 'Newest' },
-            { key: 'oldest', label: 'Oldest' },
-            { key: 'totalDesc', label: 'Total ↓' },
-            { key: 'totalAsc', label: 'Total ↑' },
-          ].map((option) => (
-            <TouchableOpacity
-              key={option.key}
-              style={[
-                styles.filterChip,
-                sortOption === option.key && styles.filterChipActive,
-              ]}
-              onPress={() => setSortOption(option.key as any)}
-            >
-              <Text
-                style={[
-                  styles.filterChipText,
-                  sortOption === option.key && styles.filterChipTextActive,
-                ]}
+            <View style={styles.filterGroup}>
+              <Text style={styles.filterLabel}>Group</Text>
+              <View style={styles.chipRow}>
+                {['none', 'daily', 'monthly'].map((group) => (
+                  <TouchableOpacity
+                    key={group}
+                    style={[
+                      styles.filterChip,
+                      groupBy === group && styles.filterChipActive,
+                    ]}
+                    onPress={() => setGroupBy(group as any)}
+                  >
+                    <Text
+                      style={[
+                        styles.filterChipText,
+                        groupBy === group && styles.filterChipTextActive,
+                      ]}
+                    >
+                      {group === 'none' ? 'None' : group.charAt(0).toUpperCase() + group.slice(1)}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.datePresetRow}>
+            {[
+              { label: 'Today', days: 1 },
+              { label: 'Last 2 days', days: 2 },
+              { label: 'Last 7 days', days: 7 },
+              { label: 'Last month', days: 30 },
+            ].map((preset) => (
+              <TouchableOpacity
+                key={preset.label}
+                style={styles.presetChip}
+                onPress={() => applyDatePreset(preset.days)}
               >
-                {option.label}
-              </Text>
+                <Text style={styles.filterChipText}>{preset.label}</Text>
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity
+              style={[styles.presetChip, styles.clearChip]}
+              onPress={() => {
+                setDateStart('');
+                setDateEnd('');
+              }}
+            >
+              <Text style={[styles.filterChipText, styles.clearChipText]}>Clear</Text>
             </TouchableOpacity>
-          ))}
-        </View>
-      </View>
+          </View>
+
+          <View style={styles.filterRow}>
+            <TextInput
+              style={[styles.searchInput, styles.smallInput]}
+              placeholder="Expert name"
+              value={expertFilter}
+              onChangeText={setExpertFilter}
+              placeholderTextColor="#9ca3af"
+            />
+            <TextInput
+              style={[styles.searchInput, styles.smallInput]}
+              placeholder="From (YYYY-MM-DD)"
+              value={dateStart}
+              onChangeText={setDateStart}
+              placeholderTextColor="#9ca3af"
+            />
+            <TextInput
+              style={[styles.searchInput, styles.smallInput]}
+              placeholder="To (YYYY-MM-DD)"
+              value={dateEnd}
+              onChangeText={setDateEnd}
+              placeholderTextColor="#9ca3af"
+            />
+          </View>
+
+          <View style={styles.sortBar}>
+            <Text style={styles.filterLabel}>Sort</Text>
+            <View style={styles.chipRow}>
+              {[
+                { key: 'newest', label: 'Newest' },
+                { key: 'oldest', label: 'Oldest' },
+                { key: 'totalDesc', label: 'Total ↓' },
+                { key: 'totalAsc', label: 'Total ↑' },
+              ].map((option) => (
+                <TouchableOpacity
+                  key={option.key}
+                  style={[
+                    styles.filterChip,
+                    sortOption === option.key && styles.filterChipActive,
+                  ]}
+                  onPress={() => setSortOption(option.key as any)}
+                >
+                  <Text
+                    style={[
+                      styles.filterChipText,
+                      sortOption === option.key && styles.filterChipTextActive,
+                    ]}
+                  >
+                    {option.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        </>
+      )}
 
       <ScrollView
         style={styles.content}
@@ -577,6 +598,31 @@ const styles = StyleSheet.create({
   },
   filterChipTextActive: {
     color: '#ffffff',
+  },
+  filterToggleRow: {
+    marginHorizontal: 16,
+    marginBottom: 12,
+    alignItems: 'flex-start',
+  },
+  filterToggleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#2563eb',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 999,
+  },
+  filterToggleText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  windowTypeText: {
+    color: '#4b5563',
+    fontSize: 13,
+    marginTop: 6,
+    marginBottom: 10,
   },
   filterRow: {
     flexDirection: 'row',
