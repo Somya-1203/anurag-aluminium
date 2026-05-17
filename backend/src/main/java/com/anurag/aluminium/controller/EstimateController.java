@@ -63,12 +63,22 @@ public class EstimateController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Map<String, String>> deleteEstimate(@PathVariable String id) {
+    public ResponseEntity<Map<String, String>> deleteEstimate(
+            @PathVariable String id,
+            @RequestHeader(value = "X-User-Role", required = false) String userRole) {
         try {
+            // Check if user is admin
+            if (userRole == null || !userRole.equalsIgnoreCase("admin")) {
+                logger.warn("Unauthorized delete attempt for estimate id={} by user with role={}", id, userRole);
+                return ResponseEntity.status(403).body(Map.of("error", "Only admins can delete estimates"));
+            }
+            
             estimateService.deleteEstimate(id);
-            return ResponseEntity.ok(Map.of("message", "Estimate deleted"));
+            logger.info("Estimate with id={} deleted successfully", id);
+            return ResponseEntity.ok(Map.of("message", "Estimate deleted successfully"));
         } catch (Exception e) {
-            return ResponseEntity.notFound().build();
+            logger.error("Error deleting estimate: {}", e.getMessage(), e);
+            return ResponseEntity.status(404).body(Map.of("error", "Estimate not found"));
         }
     }
 

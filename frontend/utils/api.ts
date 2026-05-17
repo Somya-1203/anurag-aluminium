@@ -74,9 +74,10 @@ export const api = {
     return response.json();
   },
 
-  deleteEstimate: async (id: string) => {
+  deleteEstimate: async (id: string, userRole?: string) => {
     const response = await fetch(`${API_URL}/api/estimates/${id}`, {
       method: 'DELETE',
+      headers: userRole ? { 'X-User-Role': userRole } : {},
     });
     if (!response.ok) throw new Error('Failed to delete estimate');
     return response.json();

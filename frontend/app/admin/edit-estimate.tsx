@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { api } from '../../utils/api';
+import { useAuthStore } from '../../store/authStore';
 import { Ionicons } from '@expo/vector-icons';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
@@ -23,11 +24,13 @@ export default function EditEstimate() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const estimateId = params.id as string;
+  const user = useAuthStore((state) => state.user);
 
   const [estimate, setEstimate] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [generatingPDF, setGeneratingPDF] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [defaultRate, setDefaultRate] = useState(100);
   const [companySettings, setCompanySettings] = useState<any>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -94,6 +97,42 @@ export default function EditEstimate() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleDelete = async () => {
+    if (!user || user.role !== 'admin') {
+      Alert.alert('Error', 'Only admins can delete estimates');
+      return;
+    }
+
+    Alert.alert(
+      'Delete Estimate?',
+      'Are you sure you want to delete this estimate? This action cannot be undone.',
+      [
+        {
+          text: 'Cancel',
+          onPress: () => {},
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          onPress: async () => {
+            setDeleting(true);
+            try {
+              await api.deleteEstimate(estimateId, user.role);
+              Alert.alert('Success', 'Estimate deleted successfully');
+              router.back();
+            } catch (error) {
+              console.error('Delete error:', error);
+              Alert.alert('Error', 'Failed to delete estimate');
+            } finally {
+              setDeleting(false);
+            }
+          },
+          style: 'destructive',
+        },
+      ]
+    );
   };
 
   const generateAndSharePDF = async () => {
@@ -335,6 +374,19 @@ export default function EditEstimate() {
               {generatingPDF ? 'Generating...' : 'Generate & Share PDF'}
             </Text>
           </TouchableOpacity>
+
+          {user?.role === 'admin' && (
+            <TouchableOpacity
+              style={[styles.deleteButton, deleting && styles.deleteButtonDisabled]}
+              onPress={handleDelete}
+              disabled={deleting}
+            >
+              <Ionicons name="trash" size={20} color="#ffffff" />
+              <Text style={styles.deleteButtonText}>
+                {deleting ? 'Deleting...' : 'Delete'}
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
       </ScrollView>
 
@@ -575,6 +627,24 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   pdfButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  deleteButton: {
+    backgroundColor: '#dc2626',
+    borderRadius: 8,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 12,
+  },
+  deleteButtonDisabled: {
+    opacity: 0.6,
+  },
+  deleteButtonText: {
     color: '#ffffff',
     fontSize: 16,
     fontWeight: '600',
